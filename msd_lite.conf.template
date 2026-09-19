@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  msd_lite 配置模板
+  由 entrypoint.sh 用环境变量渲染后写入 /etc/msd_lite/msd_lite.conf
+
+  单位说明（重要）：
+    precache / ringBufSize / sndBlockSize 单位是 KB，程序内部会 *1024 转为字节
+    sndBuf / rcvBuf / rcvLoWatermark / sndLoWatermark 单位是字节
+-->
+<msd>
+	<log>
+		<level>__MSD_LOG_LEVEL__</level>
+	</log>
+
+	<threadPool>
+		<threadsCountMax>__MSD_THREADS__</threadsCountMax>
+		<fBindToCPU>no</fBindToCPU>
+	</threadPool>
+
+	<!-- HTTP 服务 -->
+	<HTTP>
+		<bindList>
+			<bind><address>0.0.0.0:__MSD_PORT__</address><fAcceptFilter>n</fAcceptFilter></bind>
+		</bindList>
+		<hostnameList>
+			<hostname>*</hostname>
+		</hostnameList>
+	</HTTP>
+
+	<!-- 流分发参数 -->
+	<hubProfileList>
+		<hubProfile>
+			<fDropSlowClients>no</fDropSlowClients>
+			<fSocketHalfClosed>no</fSocketHalfClosed>
+			<fSocketTCPNoDelay>yes</fSocketTCPNoDelay>
+			<fSocketTCPNoPush>yes</fSocketTCPNoPush>
+			<!-- 预缓存：客户端连接后先缓冲这些数据再开始播放，单位为 KB -->
+			<precache>__MSD_PRECACHE__</precache>
+			<!-- 环形缓冲区大小(KB)，建议 >= precache -->
+			<ringBufSize>__MSD_RINGBUF__</ringBufSize>
+			<skt>
+				<!-- 客户端 socket 发送缓冲(字节) -->
+				<sndBuf>__MSD_SNDBUF__</sndBuf>
+				<!-- 发送块大小(字节)，必须为 4 的倍数 -->
+				<sndLoWatermark>__MSD_SNDLOWAT__</sndLoWatermark>
+			</skt>
+			<headersList>
+				<header>Pragma: no-cache</header>
+				<header>Content-Type: video/mpeg</header>
+			</headersList>
+		</hubProfile>
+	</hubProfileList>
+
+	<!-- 组播源参数 -->
+	<sourceProfileList>
+		<sourceProfile>
+			<skt>
+				<!-- 组播接收 socket 缓冲(字节) -->
+				<rcvBuf>__MSD_RCVBUF__</rcvBuf>
+				<!-- 接收低水位(字节)。注意: Linux 下 SO_RCVLOWAT 对 select/poll 无效 -->
+				<rcvLoWatermark>__MSD_RCVLOWAT__</rcvLoWatermark>
+				<!-- 组播接收超时(秒): 超过该时间无数据则销毁流；0 = 不检查 -->
+				<rcvTimeout>__MSD_RCVTIMEOUT__</rcvTimeout>
+			</skt>
+			<multicast>
+				<!-- 接收组播的网卡名，必须是物理网卡，如 eth0 -->
+				<ifName>__MSD_IFACE__</ifName>
+				<!-- 每隔 X 秒重新 IGMP 加入；0 = 不重加入 -->
+				<rejoinTime>0</rejoinTime>
+			</multicast>
+		</sourceProfile>
+	</sourceProfileList>
+</msd>
